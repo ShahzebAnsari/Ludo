@@ -39,6 +39,27 @@ public class MainActivity extends AppCompatActivity {
     boolean playerOrDice=false;//player=true;dice=false;
     boolean extraChance=false;
 
+    void adjust(int position,Pattern curPattern){
+        int count=0;
+        int size=40;
+        for(int i=0;i<ref.size();i++){
+            Pattern p=ref.get(i);
+            if((p.getInitPosition()+p.getNoOfStep())%sizeOfCycle==position&&p!=curPattern&&p.getState()==curPattern.getState()){
+                size=p.getPatternSize()-10;
+                p.setPatternSize(size);
+                p.getView().setLayoutParams(new RelativeLayout.LayoutParams(size,size));;
+                count++;
+            }
+        }
+
+            curPattern.setSpacing(2 * count);
+            curPattern.setPatternSize(size);
+            curPattern.getView().setLayoutParams(new RelativeLayout.LayoutParams(size,size));;
+            curPattern.getView().setTranslationX(xCoordinate[(int) getCoordinate[(curPattern.getInitPosition() + curPattern.getNoOfStep()) % sizeOfCycle].first] + 2 * count);
+            curPattern.getView().setTranslationY(yCoordinate[(int) getCoordinate[(curPattern.getInitPosition() + curPattern.getNoOfStep()) % sizeOfCycle].second] + 2 * count);
+
+    }
+
     boolean isOnStar(int position){
         if(position%13==0)
             return true;
@@ -153,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
                                     play_after_turn(ref.get(i));
                             }
                             //debug.setText(currentPlayer.color()+" "+Integer.toString(currentPlayer.getState())+" "+extraChance);
+                            adjust((ref.get(i).getNoOfStep()+ref.get(i).getInitPosition())%sizeOfCycle,ref.get(i));
                             queueSet();
                             int a;
                             switch(Q.peek().color()){
@@ -181,6 +203,8 @@ public class MainActivity extends AppCompatActivity {
         private int initPosition;
         private int patternNo;
         private View view;
+        private int patternSize;
+        private int spacing;
         Pattern(String color,int i){
             this.color=color;
             state=1;
@@ -188,6 +212,8 @@ public class MainActivity extends AppCompatActivity {
             patternNo=i;
             view=createView(color,firstHomePosition.get(color).first+xHomePosition[i],firstHomePosition.get(color).second+yHomePosition[i]);
             ref.add(this);
+            patternSize=40;
+            spacing=0;
         }
         View getView(){return view;}
         String getColor(){return color;}
@@ -257,6 +283,14 @@ public class MainActivity extends AppCompatActivity {
             return noOfStep;
         }
         int getInitPosition() {return initPosition;}
+        int getPatternSize(){return patternSize;}
+        int getSpacing(){return spacing;}
+        void setPatternSize(int patternSize){
+            this.patternSize=patternSize;
+        }
+        void setSpacing(int spacing) {
+            this.spacing=spacing;
+        }
 
     }
 

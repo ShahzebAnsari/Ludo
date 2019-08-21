@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Pair;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -31,33 +32,46 @@ public class MainActivity extends AppCompatActivity {
     Map<String,Integer> initialPosition;
     Map<String, Pair<Integer,Integer>> firstHomePosition;
     Map<String, Pair<Integer,Integer>> toBranch;
+    Map<String,Integer> colorToIndex;
     ArrayList<Pattern> ref;
     ArrayList<Player> playerArrayList;
     Queue<Player> Q;
-    int diceNo;
+    int diceNo=1;
     Player currentPlayer;
     boolean playerOrDice=false;//player=true;dice=false;
     boolean extraChance=false;
+    ArrayList<ArrayList<Integer>> dice;
+    ImageView Dice;
+    ImageView arrow;
 
-    void adjust(int position,Pattern curPattern){
+    void adjust(int position,int curState){
+        if(curState==1) return;
         int count=0;
-        int size=40;
         for(int i=0;i<ref.size();i++){
             Pattern p=ref.get(i);
-            if((p.getInitPosition()+p.getNoOfStep())%sizeOfCycle==position&&p!=curPattern&&p.getState()==curPattern.getState()){
-                size=p.getPatternSize()-10;
-                p.setPatternSize(size);
-                p.getView().setLayoutParams(new RelativeLayout.LayoutParams(size,size));;
+            if((p.getNoOfStep()+p.getInitPosition())%sizeOfCycle==position&&p.getState()==curState){
                 count++;
             }
         }
-
-            curPattern.setSpacing(2 * count);
-            curPattern.setPatternSize(size);
-            curPattern.getView().setLayoutParams(new RelativeLayout.LayoutParams(size,size));;
-            curPattern.getView().setTranslationX(xCoordinate[(int) getCoordinate[(curPattern.getInitPosition() + curPattern.getNoOfStep()) % sizeOfCycle].first] + 2 * count);
-            curPattern.getView().setTranslationY(yCoordinate[(int) getCoordinate[(curPattern.getInitPosition() + curPattern.getNoOfStep()) % sizeOfCycle].second] + 2 * count);
-
+        int size=40-4*(count-1);
+        count=0;
+        for(int i=0;i<ref.size();i++){
+            Pattern p=ref.get(i);
+            if((p.getNoOfStep()+p.getInitPosition())%sizeOfCycle==position&&p.getState()==curState){
+                p.setPatternSize(size);
+                p.setSpacing(4*count);
+                count++;
+                p.getView().setLayoutParams(new RelativeLayout.LayoutParams(size,size));
+                if(p.getState()==2){
+                    p.getView().setTranslationX(xCoordinate[(int) getCoordinate[(p.getInitPosition() + p.getNoOfStep()) % sizeOfCycle].first] + p.getSpacing());
+                    p.getView().setTranslationY(yCoordinate[(int) getCoordinate[(p.getInitPosition() + p.getNoOfStep()) % sizeOfCycle].second] + p.getSpacing());
+                }
+                else if(p.getState()==3||p.getState()==4){
+                    p.getView().setTranslationX(xCoordinate[(int) getCoordinate[(p.getInitPosition() + p.getNoOfStep()) % sizeOfCycle].first+toBranch.get(p.color).first] + p.getSpacing());
+                    p.getView().setTranslationY(yCoordinate[(int) getCoordinate[(p.getInitPosition() + p.getNoOfStep()) % sizeOfCycle].second+toBranch.get(p.color).second] + p.getSpacing());
+                }
+            }
+        }
     }
 
     boolean isOnStar(int position){
@@ -71,18 +85,9 @@ public class MainActivity extends AppCompatActivity {
     void rollDice(View view){
         if(playerOrDice==true) return;
         playerOrDice=true;
+        arrow.setVisibility(View.GONE);
         diceNo=(int)(Math.random()*6)+1;
-        int x;
-        switch (diceNo){
-            case 1: x=R.drawable.one_dice;break;
-            case 2: x=R.drawable.two_dice;break;
-            case 3:x=R.drawable.three_dice;break;
-            case 4:x=R.drawable.four_dice;break;
-            case 5:x=R.drawable.five_dice;break;
-            case 6:x=R.drawable.six_dice;break;
-            default: x=R.drawable.one_dice;
-        }
-        view.setBackgroundResource(x);
+        Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color)).get(diceNo-1));
         queueCall();
         //Toast.makeText(this,Q.size() + currentPlayer.color(), Toast.LENGTH_SHORT).show();
         if(diceNo==6) {
@@ -93,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
         if(!currentPlayer.canPlay(diceNo))
         {
             playerOrDice=false;
+            arrow.setVisibility(View.VISIBLE);
             queueSet();
             int a;
             switch(Q.peek().color()){
@@ -104,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
             }
             debug.setBackgroundColor(getResources().getColor(a));
             debug.setText(Q.peek().color());
+            Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color)).get(diceNo-1));
         }
 
     }
@@ -133,6 +140,15 @@ public class MainActivity extends AppCompatActivity {
     }
     void play_after_turn(Pattern P){P.play_after_turn(diceNo);}
 
+    int findPattern(Pattern p){
+        for(int i=0;i<ref.size();i++){
+            if((p.getInitPosition()+p.getNoOfStep())%sizeOfCycle==(ref.get(i).getInitPosition()+ref.get(i).getNoOfStep())%sizeOfCycle&&p.getState()==ref.get(i).getState()&&ref.get(i).getColor()==currentPlayer.color()){
+                return i;
+            }
+        }
+        return -1;
+    }
+
     View createView(final String color, int x, int y)
     {
         final View view=new View(this);
@@ -152,15 +168,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(currentPlayer==null) return;
-                for(int i=0;i<ref.size();i++){
-                    if(v==ref.get(i).getView()){
-                        if(ref.get(i).getColor()==currentPlayer.color()){
+                for(int j=0;j<ref.size();j++){
+                    if(v==ref.get(j).getView()){
+                        int i=findPattern(ref.get(j));
+                        if(i!=-1){
                             if(ref.get(i).getState()==3&&ref.get(i).getNoOfStep()+diceNo>sizeOfCycle+4) { return;}
                             if(ref.get(i).getState()==1&&diceNo!=6) {return;}
                             if(ref.get(i).getState()==4) {return;}
                             if(playerOrDice==false){return;}
                             playerOrDice=false;
-                            switch (ref.get(i).getState()) {
+                            arrow.setVisibility(View.VISIBLE);
+                            int tempState=ref.get(i).getState();
+                            switch (tempState) {
                                 case 1:
                                     if (diceNo == 6) {
                                         currentPlayer.setState(2);
@@ -174,7 +193,8 @@ public class MainActivity extends AppCompatActivity {
                                     play_after_turn(ref.get(i));
                             }
                             //debug.setText(currentPlayer.color()+" "+Integer.toString(currentPlayer.getState())+" "+extraChance);
-                            adjust((ref.get(i).getNoOfStep()+ref.get(i).getInitPosition())%sizeOfCycle,ref.get(i));
+                            adjust((ref.get(i).getNoOfStep()+ref.get(i).getInitPosition())%sizeOfCycle,ref.get(i).getState());
+                            adjust((ref.get(i).getNoOfStep()+ref.get(i).getInitPosition()-diceNo+sizeOfCycle)%sizeOfCycle,tempState);
                             queueSet();
                             int a;
                             switch(Q.peek().color()){
@@ -186,6 +206,8 @@ public class MainActivity extends AppCompatActivity {
                             }
                             debug.setBackgroundColor(getResources().getColor(a));
                             debug.setText(Q.peek().color());
+                            Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color)).get(diceNo-1));
+
                         }
                     }
                 }
@@ -206,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
         private int patternSize;
         private int spacing;
         Pattern(String color,int i){
+            noOfStep=i;
             this.color=color;
             state=1;
             this.initPosition=initialPosition.get(color);
@@ -246,8 +269,8 @@ public class MainActivity extends AppCompatActivity {
             if(noOfStep+diceNo>sizeOfCycle-2){
                 state=3;
                 play_after_turn(diceNo);
-                view.setTranslationX(xCoordinate[(int) getCoordinate[(initPosition + noOfStep) % sizeOfCycle].first+toBranch.get(color).first]);
-                view.setTranslationY(yCoordinate[(int) getCoordinate[(initPosition + noOfStep) % sizeOfCycle].second+toBranch.get(color).second]);
+                //view.setTranslationX(xCoordinate[(int) getCoordinate[(initPosition + noOfStep) % sizeOfCycle].first+toBranch.get(color).first]);
+                //view.setTranslationY(yCoordinate[(int) getCoordinate[(initPosition + noOfStep) % sizeOfCycle].second+toBranch.get(color).second]);
                 return;
             }
             noOfStep+=diceNo;
@@ -371,10 +394,51 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         relativeLayout=(RelativeLayout)findViewById(R.id.relativeLayout);
         debug=(TextView)findViewById(R.id.debug);
+        Dice=(ImageView)findViewById(R.id.Dice);
+        arrow=(ImageView)findViewById(R.id.arrow);
         ref = new ArrayList<>();
         playerArrayList=new ArrayList<>();
         Q = new LinkedList<>();
         initialPosition=new HashMap<String, Integer>();
+        dice=new ArrayList<ArrayList<Integer>>();
+        ArrayList<Integer> temp=new ArrayList<Integer>();
+        temp.add(R.drawable.one_green);
+        temp.add(R.drawable.two_green);
+        temp.add(R.drawable.three_green);
+        temp.add(R.drawable.four_green);
+        temp.add(R.drawable.five_green);
+        temp.add(R.drawable.six_green);
+        dice.add(new ArrayList<Integer>(temp));
+        temp.clear();
+        temp.add(R.drawable.one_yellow);
+        temp.add(R.drawable.two_yellow);
+        temp.add(R.drawable.three_yellow);
+        temp.add(R.drawable.four_yellow);
+        temp.add(R.drawable.five_yellow);
+        temp.add(R.drawable.six_yellow);
+        dice.add(new ArrayList<Integer>(temp));
+        temp.clear();
+        temp.add(R.drawable.one_blue);
+        temp.add(R.drawable.two_blue);
+        temp.add(R.drawable.three_blue);
+        temp.add(R.drawable.four_blue);
+        temp.add(R.drawable.five_blue);
+        temp.add(R.drawable.six_blue);
+        dice.add(new ArrayList<Integer>(temp));
+        temp.clear();
+        temp.add(R.drawable.one_red);
+        temp.add(R.drawable.two_red);
+        temp.add(R.drawable.three_red);
+        temp.add(R.drawable.four_red);
+        temp.add(R.drawable.five_red);
+        temp.add(R.drawable.six_red);
+        dice.add(new ArrayList<Integer>(temp));
+        temp.clear();
+        colorToIndex=new HashMap<String, Integer>();
+        colorToIndex.put("green",0);
+        colorToIndex.put("yellow",1);
+        colorToIndex.put("blue",2);
+        colorToIndex.put("red",3);
         initialPosition.put("green",0);
         initialPosition.put("yellow",13);
         initialPosition.put("blue",26);
@@ -396,6 +460,7 @@ public class MainActivity extends AppCompatActivity {
         Q.add(player);
         debug.setBackgroundColor(getResources().getColor(R.color.green));
         debug.setText("green");
+        Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color)).get(diceNo-1));
         Q.add(player1);
         //queueCall();
         int tempX=8;

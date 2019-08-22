@@ -1,5 +1,6 @@
 package com.example.ludo;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Pair;
@@ -43,6 +44,9 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<ArrayList<Integer>> dice;
     ImageView Dice;
     ImageView arrow;
+    Map<String,Integer> intColor;
+    int noOfWinningPlayer=0;
+    Intent myIntent;
 
     void adjust(int position,int curState){
         if(curState==1) return;
@@ -100,17 +104,9 @@ public class MainActivity extends AppCompatActivity {
             playerOrDice=false;
             arrow.setVisibility(View.VISIBLE);
             queueSet();
-            int a;
-            switch(Q.peek().color()){
-                case "green": a=R.color.green;break;
-                case "yellow":a=R.color.yellow;break;
-                case "blue":a=R.color.blue;break;
-                case "red":a=R.color.red;break;
-                default: a=R.color.green;
-            }
-            debug.setBackgroundColor(getResources().getColor(a));
-            debug.setText(Q.peek().color());
-            Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color)).get(diceNo-1));
+            debug.setBackgroundColor(getResources().getColor(intColor.get(Q.peek().color())));
+            debug.setText((Q.peek().color()).toUpperCase());
+            Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color())).get(diceNo-1));
         }
 
     }
@@ -196,17 +192,9 @@ public class MainActivity extends AppCompatActivity {
                             adjust((ref.get(i).getNoOfStep()+ref.get(i).getInitPosition())%sizeOfCycle,ref.get(i).getState());
                             adjust((ref.get(i).getNoOfStep()+ref.get(i).getInitPosition()-diceNo+sizeOfCycle)%sizeOfCycle,tempState);
                             queueSet();
-                            int a;
-                            switch(Q.peek().color()){
-                                case "green": a=R.color.green;break;
-                                case "yellow":a=R.color.yellow;break;
-                                case "blue":a=R.color.blue;break;
-                                case "red":a=R.color.red;break;
-                                default: a=R.color.green;
-                            }
-                            debug.setBackgroundColor(getResources().getColor(a));
-                            debug.setText(Q.peek().color());
-                            Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color)).get(diceNo-1));
+                            debug.setBackgroundColor(getResources().getColor(intColor.get(Q.peek().color())));
+                            debug.setText((Q.peek().color()).toUpperCase());
+                            Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color())).get(diceNo-1));
 
                         }
                     }
@@ -321,9 +309,11 @@ public class MainActivity extends AppCompatActivity {
         private String color;
         private Pattern[] patterns;
         private int state;//lock=1; normal=2; win=3;
+        private int winningPosition;
         Player(String color){
             this.color=color;
             state=1;
+            winningPosition=-1;
             patterns=new Pattern[noPatternPerPlayer];
             for(int i=0;i<noPatternPerPlayer;i++)
             {
@@ -359,8 +349,19 @@ public class MainActivity extends AppCompatActivity {
                 if(stateHash[3]==4){
                     this.state=state;
                     extraChance=false;
+                    noOfWinningPlayer++;
+                    winningPosition=noOfWinningPlayer;
                     if(Q.size()==2) {
-                        //Game over
+                        //game over
+                        ArrayList<String> playerColor=new ArrayList<>();
+                        ArrayList<Integer> winPosition=new ArrayList<>();
+                        for(int i=0;i<playerArrayList.size();i++){
+                            playerColor.add(playerArrayList.get(i).color());
+                            winPosition.add(playerArrayList.get(i).getWinningPosition());
+                        }
+                        myIntent.putStringArrayListExtra("playerColor",playerColor);
+                        myIntent.putIntegerArrayListExtra("winPosition",winPosition);
+                        startActivity(myIntent);
                     }
                 }
             }
@@ -385,6 +386,7 @@ public class MainActivity extends AppCompatActivity {
             }
             return false;
         }
+        int getWinningPosition(){return winningPosition;}
     }
 
 
@@ -394,6 +396,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         relativeLayout=(RelativeLayout)findViewById(R.id.relativeLayout);
         debug=(TextView)findViewById(R.id.debug);
+        myIntent=new Intent(this,Main3Activity.class);
+        intColor=new HashMap<String, Integer>();
+        intColor.put("green",R.color.green);
+        intColor.put("yellow",R.color.yellow);
+        intColor.put("blue",R.color.blue);
+        intColor.put("red",R.color.red);
         Dice=(ImageView)findViewById(R.id.Dice);
         arrow=(ImageView)findViewById(R.id.arrow);
         ref = new ArrayList<>();
@@ -453,15 +461,19 @@ public class MainActivity extends AppCompatActivity {
         toBranch.put("yellow",new Pair<Integer, Integer>(-1,-1));
         toBranch.put("blue",new Pair<Integer, Integer>(1,-1));
         toBranch.put("red",new Pair<Integer, Integer>(1,1));
-        Player player=new Player("green");
-        Player player1=new Player("blue");
-        playerArrayList.add(player);
-        playerArrayList.add(player1);
-        Q.add(player);
-        debug.setBackgroundColor(getResources().getColor(R.color.green));
-        debug.setText("green");
-        Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color)).get(diceNo-1));
-        Q.add(player1);
+        Intent intent=getIntent();
+        int[] arr=intent.getIntArrayExtra("arr");
+        ArrayList<String> S=new ArrayList<>(intent.getStringArrayListExtra("S"));
+        for(int i=0;i<S.size();i++){
+            Player player=new Player(S.get(i));
+            playerArrayList.add(player);
+            Q.add(player);
+        }
+        debug.setBackgroundColor(getResources().getColor(intColor.get(Q.peek().color())));
+        debug.setText((Q.peek().color()).toUpperCase());
+
+        Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color())).get(diceNo-1));
+
         //queueCall();
         int tempX=8;
         int tempY=6;

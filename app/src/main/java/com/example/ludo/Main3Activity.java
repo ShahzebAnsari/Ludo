@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 public class Main3Activity extends AppCompatActivity {
     RelativeLayout relativeLayout;
-    void playAgain(View view){
+    void playAgain(){
         Intent i=new Intent(this,Main2Activity.class);
         startActivity(i);
         finish();
@@ -24,6 +24,13 @@ public class Main3Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main3);
         relativeLayout=(RelativeLayout)findViewById(R.id.relativeLayout);
+        View playAgainView = findViewById(R.id.playAgainView);
+        playAgainView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playAgain();
+            }
+        });
         String[] str=new String[]{"FIRST","SECOND","THIRD","LAST"};
         Intent myIntent=getIntent();
         ArrayList<String> playerColor=new ArrayList<>(myIntent.getStringArrayListExtra("playerColor"));

@@ -16,6 +16,7 @@ public class Main3Activity extends AppCompatActivity {
     void playAgain(View view){
         Intent i=new Intent(this,Main2Activity.class);
         startActivity(i);
+        finish();
     }
 
     @Override

@@ -1,8 +1,14 @@
 package com.example.ludo;
 
 import android.content.Intent;
+import android.graphics.drawable.AnimatedVectorDrawable;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
+import android.support.graphics.drawable.AnimatedVectorDrawableCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.graphics.drawable.AnimatedStateListDrawableCompat;
 import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
@@ -47,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
     Map<String,Integer> intColor;
     int noOfWinningPlayer=0;
     Intent myIntent;
+    int[] makeNoRepeat=new int[]{-1,-2,-3};
+    int ptrOnRepeat=0;
 
     void adjust(int position,int curState){
         if(curState==1) return;
@@ -91,14 +99,18 @@ public class MainActivity extends AppCompatActivity {
         playerOrDice=true;
         arrow.setVisibility(View.GONE);
         diceNo=(int)(Math.random()*6)+1;
+        makeNoRepeat[ptrOnRepeat]=diceNo;
+        while(diceNo==6&&makeNoRepeat[0]==makeNoRepeat[1]&&makeNoRepeat[1]==makeNoRepeat[2]){
+            diceNo=(int)(Math.random()*6)+1;
+            makeNoRepeat[ptrOnRepeat]=diceNo;
+        }
+        ptrOnRepeat=(ptrOnRepeat+1)%3;
         Dice.setBackgroundResource(dice.get(colorToIndex.get(Q.peek().color)).get(diceNo-1));
         queueCall();
-        //Toast.makeText(this,Q.size() + currentPlayer.color(), Toast.LENGTH_SHORT).show();
         if(diceNo==6) {
             extraChance=true;
         }
 
-        //Toast.makeText(this, currentPlayer.color(), Toast.LENGTH_SHORT).show();
         if(!currentPlayer.canPlay(diceNo))
         {
             playerOrDice=false;
@@ -137,6 +149,7 @@ public class MainActivity extends AppCompatActivity {
     void play_after_turn(Pattern P){P.play_after_turn(diceNo);}
 
     int findPattern(Pattern p){
+
         for(int i=0;i<ref.size();i++){
             if((p.getInitPosition()+p.getNoOfStep())%sizeOfCycle==(ref.get(i).getInitPosition()+ref.get(i).getNoOfStep())%sizeOfCycle&&p.getState()==ref.get(i).getState()&&ref.get(i).getColor()==currentPlayer.color()){
                 return i;
@@ -241,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
             if(state==1)
             {
                 this.state=1;
-                noOfStep=0;
+                noOfStep=patternNo;
                 view.setTranslationX(xCoordinate[firstHomePosition.get(color).first+xHomePosition[patternNo]]);
                 view.setTranslationY(yCoordinate[firstHomePosition.get(color).second+yHomePosition[patternNo]]);
                 for(int i=0;i<playerArrayList.size();i++)
@@ -362,6 +375,7 @@ public class MainActivity extends AppCompatActivity {
                         myIntent.putStringArrayListExtra("playerColor",playerColor);
                         myIntent.putIntegerArrayListExtra("winPosition",winPosition);
                         startActivity(myIntent);
+                        finish();
                     }
                 }
             }
@@ -390,6 +404,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -403,7 +418,24 @@ public class MainActivity extends AppCompatActivity {
         intColor.put("blue",R.color.blue);
         intColor.put("red",R.color.red);
         Dice=(ImageView)findViewById(R.id.Dice);
+        Dice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                rollDice(v);
+            }
+        });
         arrow=(ImageView)findViewById(R.id.arrow);
+        //adding arrow animation
+        Drawable drawable=arrow.getDrawable();
+        if(drawable instanceof AnimatedStateListDrawableCompat){
+            AnimatedVectorDrawableCompat avd=(AnimatedVectorDrawableCompat)drawable;
+            avd.start();
+        }else if(drawable instanceof AnimatedVectorDrawable){
+            AnimatedVectorDrawable avd=(AnimatedVectorDrawable)drawable;
+            avd.start();
+        }
+
+        //
         ref = new ArrayList<>();
         playerArrayList=new ArrayList<>();
         Q = new LinkedList<>();

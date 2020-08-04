@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Toast;
 
@@ -14,7 +15,8 @@ public class Main2Activity extends AppCompatActivity {
     CheckBox yellowBox;
     CheckBox blueBox;
     CheckBox redBox;
-    void play(View view){
+    Button play;
+    void play(){
         int count=0;
         ArrayList<String> S=new ArrayList<>();
         if(greenBox.isChecked()){
@@ -46,10 +48,17 @@ public class Main2Activity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
-        greenBox=(CheckBox)findViewById(R.id.green);
-        yellowBox=(CheckBox)findViewById(R.id.yellow);
-        blueBox=(CheckBox)findViewById(R.id.blue);
-        redBox=(CheckBox)findViewById(R.id.red);
+        greenBox= findViewById(R.id.green);
+        yellowBox= findViewById(R.id.yellow);
+        blueBox= findViewById(R.id.blue);
+        redBox= findViewById(R.id.red);
+        play = findViewById(R.id.play);
+        play.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                play();
+            }
+        });
 
     }
 }

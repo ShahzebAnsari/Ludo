@@ -26,15 +26,14 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="30dp"
         android:background="@drawable/one_dice"
-        android:onClick="rollDice"
         android:id="@+id/Dice"/>
     <ImageView
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="40dp"
+        android:layout_height="50dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginLeft="130dp"
-        android:layout_marginBottom="45dp"
-        android:background="@drawable/arrow"
+        android:layout_marginLeft="112dp"
+        android:layout_marginBottom="30dp"
+        app:srcCompat="@drawable/avd_anim"
         android:id="@+id/arrow"/>
 
 </RelativeLayout>

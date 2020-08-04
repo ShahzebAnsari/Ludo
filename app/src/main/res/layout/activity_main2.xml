@@ -71,6 +71,7 @@
         android:layout_marginTop="250dp"
         android:layout_marginLeft="50dp"/>
     <Button
+        android:id="@+id/play"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="play"
@@ -78,5 +79,5 @@
         android:layout_alignParentRight="true"
         android:layout_marginBottom="20dp"
         android:layout_marginRight="20dp"
-        android:onClick="play"/>
+        />
 </RelativeLayout>
